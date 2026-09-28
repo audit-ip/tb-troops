@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Total Battle March Ladder Calculator</title>
+  <style>
+    :root {
+      --bg-color: #0f141c;
+      --card-bg: #18202c;
+      --border-color: #283548;
+      --text-main: #d9e2ec;
+      --text-muted: #829ab1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 20px 10px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 480px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="number"], select {
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 15px;
+      outline: none;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-group input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    button {
+      flex: 1;
+      background-color: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+    button.btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+    button.btn-secondary:hover {
+      background-color: var(--border-color);
+    }
+    .stats-card {
+      margin-top: 20px;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    .stats-card .val {
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .stats-card .val.valid {
+      color: var(--success);
+    }
+    .table-container {
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      border-bottom: 2px solid var(--border-color);
+      padding: 10px 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    tr.section-header td {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: bold;
+      color: var(--accent);
+      padding: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .count-cell {
+      font-weight: 700;
+      color: #fff;
+      text-align: right;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--success);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 4px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="controls-grid">
+    <div class="form-group">
+      <label id="lbl-lang" for="lang-select">Language</label>
+      <select id="lang-select" onchange="switchLanguage(this.value)">
+        <option value="ru">Русский</option>
+        <option value="en" selected>English</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pl">Polski</option>
+        <option value="pt">Português</option>
+        <option value="zh">简体中文</option>
+        <option value="vi">Tiếng Việt</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label id="lbl-lead" for="input-lead">Garage Leadership</label>
+      <input type="number" id="input-lead" placeholder="e.g. 5000000" min="1000" step="1000">
+    </div>
+  </div>
+
+  <label class="checkbox-group">
+    <input type="checkbox" id="chk-g7" onchange="runCalculation()">
+    <span id="lbl-chk">Account without S9 (Substitute with G7)</span>
+  </label>
+
+  <div class="actions">
+    <button id="btn-calc" onclick="runCalculation()">Calculate</button>
+    <button id="btn-copy" class="btn-secondary" onclick="copyResults()">Copy March</button>
+  </div>
+
+  <div class="stats-card" id="stats-panel" style="display: none;">
+    <span id="lbl-stat">Leadership Used:</span>
+    <span class="val valid" id="stat-val">0 / 0 (0%)</span>
+  </div>
+
+  <div class="table-container">
+    <table id="result-table" style="display: none;">
+      <thead>
+        <tr>
+          <th id="th-tier">Tier</th>
+          <th id="th-name">Unit</th>
+          <th id="th-qty" style="text-align: right;">Count</th>
+        </tr>
+      </thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast">March copied!</div>
+
+<script>
+/* ==========================================================================
+   1. DATABASE & CONFIGURATION
+   ========================================================================== */
+const DATABASE = {
+  garage: [
+    { id: "e8_josephine", tier: "E8", hp: 91800, weight: 10 },
+    { id: "e9_josephine", tier: "E9", hp: 165300, weight: 10 },
+    { id: "s8_duellist", tier: "S8", hp: 9200, weight: 1 },
+    { id: "sub_melee", isSub: true, type: "melee" },
+    { id: "g8_punisher", tier: "G8", hp: 9200, weight: 1 },
+    { id: "g9_punisher", tier: "G9", hp: 16500, weight: 1 },
+    { id: "s8_legitimist", tier: "S8", hp: 9200, weight: 1 },
+    { id: "s8_whitemane", tier: "S8", hp: 18400, weight: 2 },
+    { id: "s8_lion", tier: "S8", hp: 183600, weight: 20 },
+    { id: "sub_ranged", isSub: true, type: "ranged" },
+    { id: "sub_mounted", isSub: true, type: "mounted" },
+    { id: "sub_flying", isSub: true, type: "flying" },
+    { id: "g8_purifier", tier: "G8", hp: 9200, weight: 1 },
+    { id: "g8_smiter", tier: "G8", hp: 18400, weight: 2 },
+    { id: "g8_corax", tier: "G8", hp: 183600, weight: 20 },
+    { id: "g9_purifier", tier: "G9", hp: 16500, weight: 1 },
+    { id: "g9_smiter", tier: "G9", hp: 33100, weight: 2 },
+    { id: "g9_corax", tier: "G9", hp: 330600, weight: 20 }
+  ],
+  subs: {
+    s9: {
+      melee: { id: "s9_duellist", tier: "S9", hp: 16500, weight: 1 },
+      ranged: { id: "s9_legitimist", tier: "S9", hp: 16500, weight: 1 },
+      mounted: { id: "s9_whitemane", tier: "S9", hp: 33100, weight: 2 },
+      flying: { id: "s9_lion", tier: "S9", hp: 330600, weight: 20 }
+    },
+    g7: {
+      melee: { id: "g7_halberdier", tier: "G7", hp: 5100, weight: 1 },
+      ranged: { id: "g7_arbalester", tier: "G7", hp: 5100, weight: 1 },
+      mounted: { id: "g7_knight", tier: "G7", hp: 10200, weight: 2 },
+      flying: { id: "g7_griffin", tier: "G7", hp: 102000, weight: 20 }
+    }
+  },
+  monsters: {
+    m9: [
+      { id: "m9_kraken", tier: "M9", hp: 3630000 },
+      { id: "m9_phoenix", tier: "M9", hp: 3570000 },
+      { id: "m9_devastator", tier: "M9", hp: 3510000 },
+      { id: "m9_trickster", tier: "M9", hp: 3450000 }
+    ],
+    m8: [
+      { id: "m8_kraken", tier: "M8", hp: 2010000 },
+      { id: "m8_phoenix", tier: "M8", hp: 1980000 },
+      { id: "m8_devastator", tier: "M8", hp: 1950000 },
+      { id: "m8_trickster", tier: "M8", hp: 1920000 }
+    ],
+    m7: [
+      { id: "m7_wind_lord", tier: "M7", hp: 930000 },
+      { id: "m7_dragon", tier: "M7", hp: 900000 },
+      { id: "m7_colossus", tier: "M7", hp: 870000 },
+      { id: "m7_terror", tier: "M7", hp: 840000 }
+    ]
+  },
+  mercenaries: [
+    { id: "merc_wyvern", tier: "Merc", hp: 2070000 },
+    { id: "merc_warden", tier: "Merc", hp: 1410000 },
+    { id: "merc_cannoneer", tier: "Merc", hp: 1320000 },
+    { id: "merc_salamander", tier: "Merc", hp: 1230000 },
+    { id: "merc_warregal", tier: "Merc", hp: 660000 },
+    { id: "merc_jago", tier: "Merc", hp: 660000 },
+    { id: "merc_ariel", tier: "Merc", hp: 330000 }
+  ]
+};
+
+/* ==========================================================================
+   2. LOCALIZATION ENGINE (10 Languages)
+   ========================================================================== */
+const I18N = {
+  ru: {
+    ui: {
+      lang: "Язык",
+      lead: "Лидерство гаража",
+      chk: "Аккаунт без S9 (Замена на G7)",
+      calc: "Рассчитать",
+      copy: "Скопировать марш",
+      used: "Использовано лидерства:",
+      tier: "Тир",
+      name: "Отряд",
+      qty: "Кол-во",
+      copied: "Состав марша скопирован!",
+      sec_garage: "Гаражные войска",
+      sec_monsters: "Монстры",
+      sec_mercs: "Наемники"
+    },
+    names: {
+      e8_josephine: "Josephine I", e9_josephine: "Josephine II",
+      s8_duellist: "Duellist I", s8_legitimist: "Legitimist I", s8_whitemane: "Whitemane I", s8_lion: "Royal Lion I",
+      s9_duellist: "Duellist II", s9_legitimist: "Legitimist II", s9_whitemane: "Whitemane II", s9_lion: "Royal Lion II",
+      g8_punisher: "Punisher I", g8_purifier: "Purifier I", g8_smiter: "Smiter I", g8_corax: "Corax I",
+      g9_punisher: "Punisher II", g9_purifier: "Purifier II", g9_smiter: "Smiter II", g9_corax: "Corax II",
+      g7_halberdier: "Heavy Halberdier VII", g7_arbalester: "Heavy Arbalester VII", g7_knight: "Mounted Knight VII", g7_griffin: "Battle Griffin VII",
+      m9_kraken: "Kraken II", m9_phoenix: "Fire Phoenix II", m9_devastator: "Devastator II", m9_trickster: "Trickster II",
+      m8_kraken: "Kraken I", m8_phoenix: "Fire Phoenix I", m8_devastator: "Devastator I", m8_trickster: "Trickster I",
+      m7_wind_lord: "Wind Lord", m7_dragon: "Black Dragon", m7_colossus: "Destructive Colossus", m7_terror: "Ancient Terror",
+      merc_wyvern: "Wyvern", merc_warden: "Warden", merc_cannoneer: "Eternal Cannoneer",
+      merc_salamander: "Demonic Salamander", merc_warregal: "Warregal", merc_jago: "Jago", merc_ariel: "Ariel"
+    }
+  },
+  en: {
+    ui: {
+      lang: "Language",
+      lead: "Garage Leadership",
+      chk: "Account without S9 (Substitute with G7)",
+      calc: "Calculate",
+      copy: "Copy March",
+      used: "Leadership Used:",
+      tier: "Tier",
+      name: "Unit",
+      qty: "Count",
+      copied: "March composition copied!",
+      sec_garage: "Garage Troops",
+      sec_monsters: "Monsters",
+      sec_mercs: "Mercenaries"
+    }
+  },
+  de: {
+    ui: {
+      lang: "Sprache", lead: "Garagen-Führung", chk: "Account ohne S9 (Ersatz durch G7)",
+      calc: "Berechnen", copy: "Marsch kopieren", used: "Führung verbraucht:",
+      tier: "Rang", name: "Einheit", qty: "Menge", copied: "Marsch kopiert!",
+      sec_garage: "Garagentruppen", sec_monsters: "Monster", sec_mercs: "Söldner"
+    }
+  },
+  fr: {
+    ui: {
+      lang: "Langue", lead: "Commandement Garage", chk: "Compte sans S9 (Remplacer par G7)",
+      calc: "Calculer", copy: "Copier la marche", used: "Commandement utilisé:",
+      tier: "Rang", name: "Unité", qty: "Quantité", copied: "Marche copiée!",
+      sec_garage: "Troupes de Garage", sec_monsters: "Monstres", sec_mercs: "Mercenaires"
+    }
+  },
+  es: {
+    ui: {
+      lang: "Idioma", lead: "Liderazgo de Garaje", chk: "Cuenta sin S9 (Sustituir por G7)",
+      calc: "Calcular", copy: "Copiar marcha", used: "Liderazgo utilizado:",
+      tier: "Rango", name: "Unidad", qty: "Cantidad", copied: "¡Marcha copiada!",
+      sec_garage: "Tropas de Garaje", sec_monsters: "Monstruos", sec_mercs: "Mercenarios"
+    }
+  },
+  it: {
+    ui: {
+      lang: "Lingua", lead: "Leadership Garage", chk: "Account senza S9 (Sostituisci con G7)",
+      calc: "Calcola", copy: "Copia marcia", used: "Leadership usata:",
+      tier: "Livello", name: "Unità", qty: "Quantità", copied: "Marcia copiata!",
+      sec_garage: "Truppe Garage", sec_monsters: "Mostri", sec_mercs: "Mercenari"
+    }
+  },
+  pl: {
+    ui: {
+      lang: "Język", lead: "Dowodzenie Garażu", chk: "Konto bez S9 (Zastąp przez G7)",
+      calc: "Oblicz", copy: "Kopiuj marsz", used: "Zużyte dowodzenie:",
+      tier: "Ranga", name: "Jednostka", qty: "Ilość", copied: "Skopiowano skład marszu!",
+      sec_garage: "Wojska Garażowe", sec_monsters: "Potwory", sec_mercs: "Najemnicy"
+    }
+  },
+  pt: {
+    ui: {
+      lang: "Idioma", lead: "Liderança de Garagem", chk: "Conta sem S9 (Substituir por G7)",
+      calc: "Calcular", copy: "Copiar marcha", used: "Liderança usada:",
+      tier: "Nível", name: "Unidade", qty: "Qtd", copied: "Marcha copiada!",
+      sec_garage: "Tropas de Garagem", sec_monsters: "Monstros", sec_mercs: "Mercenários"
+    }
+  },
+  zh: {
+    ui: {
+      lang: "语言", lead: "车库统率值", chk: "无S9账号（由G7替代）",
+      calc: "计算", copy: "复制行军", used: "已用统率:",
+      tier: "阶级", name: "兵种", qty: "数量", copied: "行军配置已复制！",
+      sec_garage: "车库部队", sec_monsters: "怪物", sec_mercs: "雇佣兵"
+    }
+  },
+  vi: {
+    ui: {
+      lang: "Ngôn ngữ", lead: "Lãnh đạo Nhà lính", chk: "Tài khoản không có S9 (Thay bằng G7)",
+      calc: "Tính toán", copy: "Sao chép hành quân", used: "Lãnh đạo đã dùng:",
+      tier: "Bậc", name: "Đơn vị", qty: "Số lượng", copied: "Đã sao chép hành quân!",
+      sec_garage: "Quân Nhà Lính", sec_monsters: "Quái vật", sec_mercs: "Lính đánh thuê"
+    }
+  }
+};
+
+let currentLang = "en";
+let marchResultCache = [];
+
+function switchLanguage(lang) {
+  currentLang = lang;
+  const t = I18N[lang]?.ui || I18N["en"].ui;
+  document.getElementById("lbl-lang").innerText = t.lang;
+  document.getElementById("lbl-lead").innerText = t.lead;
+  document.getElementById("lbl-chk").innerText = t.chk;
+  document.getElementById("btn-calc").innerText = t.calc;
+  document.getElementById("btn-copy").innerText = t.copy;
+  document.getElementById("lbl-stat").innerText = t.used;
+  document.getElementById("th-tier").innerText = t.tier;
+  document.getElementById("th-name").innerText = t.name;
+  document.getElementById("th-qty").innerText = t.qty;
+  document.getElementById("toast").innerText = t.copied;
+
+  if (marchResultCache.length > 0) {
+    renderTable();
+  }
+}
+
+function getUnitName(id) {
+  return I18N[currentLang]?.names?.[id] || I18N["ru"].names[id] || id;
+}
+
+/* ==========================================================================
+   3. COMPUTATION ENGINE (STRICT DESCENT LADDER)
+   ========================================================================== */
+function runCalculation() {
+  const leadInput = document.getElementById("input-lead");
+  const L_total = parseInt(leadInput.value, 10);
+  if (isNaN(L_total) || L_total <= 0) return;
+
+  const useG7 = document.getElementById("chk-g7").checked;
+
+  // 1. Формирование структуры гаражных войск
+  const garageRoster = DATABASE.garage.map(slot => {
+    if (!slot.isSub) return slot;
+    return useG7 ? DATABASE.subs.g7[slot.type] : DATABASE.subs.s9[slot.type];
+  });
+
+  const M = garageRoster.length; // 18 отрядов
+
+  // 2. Бинарный поиск масштабного коэффициента K
+  let low = 1, high = 1e9, optK = 1;
+  for (let iter = 0; iter < 45; iter++) {
+    let mid = (low + high) / 2;
+    let sumL = 0;
+    for (let i = 0; i < M; i++) {
+      let slope = (M - i);
+      let targetHP = mid * slope;
+      let count = Math.ceil(targetHP / garageRoster[i].hp);
+      sumL += count * garageRoster[i].weight;
+    }
+    if (sumL <= L_total) {
+      optK = mid;
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  // 3. Формирование ступеней гаража снизу вверх с гарантией строгого убывания
+  let garagePlan = new Array(M);
+  let prevHP = 0;
+  for (let i = M - 1; i >= 0; i--) {
+    let slope = (M - i);
+    let targetHP = Math.max(optK * slope, prevHP + 1000);
+    let count = Math.max(1, Math.ceil(targetHP / garageRoster[i].hp));
+    let totalHP = count * garageRoster[i].hp;
+    if (totalHP <= prevHP) {
+      count = Math.floor(prevHP / garageRoster[i].hp) + 1;
+      totalHP = count * garageRoster[i].hp;
+    }
+    garagePlan[i] = {
+      ...garageRoster[i],
+      count: count,
+      totalHP: totalHP,
+      usedL: count * garageRoster[i].weight
+    };
+    prevHP = totalHP;
+  }
+
+  let usedLeadership = garagePlan.reduce((acc, row) => acc + row.usedL, 0);
+
+  // 4. Расчет пулов монстров (M9 -> M8 -> M7)
+  let lowestGarageHP = garagePlan[M - 1].totalHP;
+  let monstersPlan = [];
+
+  function calcMonsterTier(units, ceilingHP) {
+    let minAllowed = Infinity;
+    for (let u of units) {
+      let maxN = Math.floor((ceilingHP - 1) / u.hp);
+      if (maxN < minAllowed) minAllowed = maxN;
+    }
+    let quantized = Math.floor(minAllowed / 10) * 10;
+    if (quantized <= 0) quantized = 10;
+
+    let tierRows = units.map(u => ({
+      ...u,
+      count: quantized,
+      totalHP: quantized * u.hp
+    }));
+
+    let lastTierHP = tierRows[tierRows.length - 1].totalHP;
+    return { rows: tierRows, exitHP: lastTierHP };
+  }
+
+  let m9 = calcMonsterTier(DATABASE.monsters.m9, lowestGarageHP);
+  let m8 = calcMonsterTier(DATABASE.monsters.m8, m9.exitHP);
+  let m7 = calcMonsterTier(DATABASE.monsters.m7, m8.exitHP);
+  monstersPlan = [...m9.rows, ...m8.rows, ...m7.rows];
+
+  // 5. Расчет наемников (строго ниже M7)
+  let ceilingMercHP = m7.exitHP;
+  let mercsPlan = [];
+  for (let merc of DATABASE.mercenaries) {
+    let count = Math.floor((ceilingMercHP - 1000) / merc.hp);
+    if (count <= 0) count = 1;
+    let totalHP = count * merc.hp;
+    mercsPlan.push({
+      ...merc,
+      count: count,
+      totalHP: totalHP
+    });
+    ceilingMercHP = totalHP;
+  }
+
+  // 6. Фиксация в кеш
+  marchResultCache = [
+    { type: "header", key: "sec_garage" },
+    ...garagePlan,
+    { type: "header", key: "sec_monsters" },
+    ...monstersPlan,
+    { type: "header", key: "sec_mercs" },
+    ...mercsPlan
+  ];
+
+  // Вывод статуса использования лидерства
+  let pct = ((usedLeadership / L_total) * 100).toFixed(2);
+  let diffPct = (100 - parseFloat(pct)).toFixed(2);
+  let statEl = document.getElementById("stat-val");
+  statEl.innerText = `${usedLeadership.toLocaleString()} / ${L_total.toLocaleString()} (${pct}%) — Free: ${diffPct}%`;
+  statEl.className = "val " + (diffPct <= 3.0 ? "valid" : "");
+  document.getElementById("stats-panel").style.display = "flex";
+
+  renderTable();
+}
+
+/* ==========================================================================
+   4. RENDER & CLIPBOARD
+   ========================================================================== */
+function renderTable() {
+  const tbody = document.getElementById("result-body");
+  tbody.innerHTML = "";
+  const t = I18N[currentLang]?.ui || I18N["en"].ui;
+
+  for (let row of marchResultCache) {
+    let tr = document.createElement("tr");
+    if (row.type === "header") {
+      tr.className = "section-header";
+      tr.innerHTML = `<td colspan="3">${t[row.key]}</td>`;
+    } else {
+      tr.innerHTML = `
+        <td><span style="color:var(--text-muted)">${row.tier}</span></td>
+        <td>${getUnitName(row.id)}</td>
+        <td class="count-cell">${row.count.toLocaleString()}</td>
+      `;
+    }
+    tbody.appendChild(tr);
+  }
+  document.getElementById("result-table").style.display = "table";
+}
+
+function copyResults() {
+  if (marchResultCache.length === 0) return;
+  const t = I18N[currentLang]?.ui || I18N["en"].ui;
+  let text = `=== TOTAL BATTLE MARCH ===\n`;
+  for (let row of marchResultCache) {
+    if (row.type === "header") {
+      text += `\n[ ${t[row.key]} ]\n`;
+    } else {
+      text += `${row.tier} ${getUnitName(row.id)}: ${row.count.toLocaleString()}\n`;
+    }
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    let toast = document.getElementById("toast");
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
+  });
+}
+</script>
+</body>
+</html>
